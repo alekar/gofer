@@ -215,6 +215,7 @@ extern  FloatPro	floatFromParts	Args((Cell,Cell));
 #define FROMQUAL     40 	  /* FROMQUAL	snd :: (Exp,Exp)	   */
 
 #define GUARDED      42 	  /* GUARDED	snd :: [guarded exprs]	   */
+#define COPY	     43		  /* COPY	snd :: expr		   */
 
 #define ARRAY        45		  /* Array:     snd :: (Bounds,[Values])   */
 #define MUTVAR	     46		  /* Mutvar:	snd :: Cell		   */

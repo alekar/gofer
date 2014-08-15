@@ -279,6 +279,13 @@ extern Cell primUndefMem,   primBlackHole;
 extern Cell primSel,	    primIf;
 extern Cell primStrict;
 
+#if HASKELL_ARRAYS
+extern Cell primArray,      primUpdate; /* Array primitives                */
+extern Cell primAccum,      primAccumArray;
+extern Cell primAmap,       primSubscript;
+extern Cell primBounds,     primElems;
+#endif
+
 extern Cell primPlusInt,    primMinusInt;/* User (general) primitives	   */
 extern Cell primMulInt,     primDivInt;
 extern Cell primModInt,     primRemInt;
@@ -304,6 +311,10 @@ extern Cell primIOBind,     primSTBind;
 extern Cell primSTNew,	    primSTAssign;
 extern Cell primSTDeref,    primSTMutVarEq;
 extern Cell primIOGetch,    primIOPutchar;
+#if HASKELL_ARRAYS
+extern Cell primSTNewArr,   primSTReadArr;/* Monadic array primitives      */
+extern Cell primSTWriteArr, primSTFreeze;
+#endif
 #endif
 
 #if  HAS_FLOATS

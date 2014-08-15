@@ -15,7 +15,7 @@
 #include <setjmp.h>
 #include <ctype.h>
 
-#define VERSION "1.02 (2.30a)"
+#define VERSION "1.03 (2.30b)"
 
 Bool dumpScs = FALSE;			/* TRUE => output sc defns	  */
 
@@ -58,7 +58,7 @@ char *argv[]; {
     /* charge.  I ask however that you show your appreciation for the many */
     /* hours of work involved by retaining my name in the banner.  Thanks! */
 
-    printf("Gofer->C Version %s  Copyright (c) Mark P Jones 1992-1994\n\n",
+    printf("Gofer->C Version %s  Copyright (c) Mark P Jones 1992-1995\n\n",
 	   VERSION);
     fflush(stdout);
     breakOn(TRUE);			/* enable break trapping	   */

@@ -77,7 +77,7 @@ char *argv[]; {
     /* charge.  I ask however that you show your appreciation for the many */
     /* hours of work involved by retaining my name in the banner.  Thanks! */
 
-    printf("Gofer Version 2.30a  Copyright (c) Mark P Jones 1991-1994\n\n");
+    printf("Gofer Version 2.30b  Copyright (c) Mark P Jones 1991-1995\n\n");
     fflush(stdout);
     interpreter(argc,argv);
     printf("[Leaving Gofer]\n");

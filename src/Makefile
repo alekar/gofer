@@ -1,4 +1,4 @@
-.SUFFIXES	: .y .c .h .o .gs
+.SUFFIXES	: .gp .gs .y .c .h .o
 OBJECTS		= storage.o input.o static.o type.o compiler.o
 IOBJECTS	= gofer.o builtin.o  machine.o output.o $(OBJECTS)
 COBJECTS	= gofc.o cbuiltin.o cmachine.o $(OBJECTS)

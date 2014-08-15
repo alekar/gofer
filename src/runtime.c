@@ -830,7 +830,7 @@ static comb3(pr_Subscript)		/* array subscript		   */
     pushpair(offset(3),offset(1));
     eval(pop());
     index = whnfInt;
-    eval(top());
+    eval(offset(2));
     arr   = whnf;
     getSize(arrBnds(arr),offset(3),size);
     if (index<0 || index>=size)
@@ -861,7 +861,7 @@ static comb1(pr_Elems)			/* elems primitive		   */
 	es         = top();
 	top()	   = tmp;
     }
-    update(0,top());
+    update(0,es);
     ret();
 }
 End

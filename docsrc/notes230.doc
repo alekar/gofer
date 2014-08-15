@@ -517,7 +517,7 @@ cc.prelude, and provides the following syntax:
 
     <dquals> ::=  {<dqual> ;}
 
-    <dqual>  ::=  <expr> <- <pat>             -- generator
+    <dqual>  ::=  <pat> <- <expr>             -- generator
               |   <expr>                      -- command
               |   let "{" decls "}"           -- local definitions
               |   if <expr>                   -- guard

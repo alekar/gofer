@@ -15,7 +15,7 @@
 #include <setjmp.h>
 #include <ctype.h>
 
-/* #define GOFC_INCLUDE  "\"gofc.h\"" */
+/*#define GOFC_INCLUDE  "\"gofc.h\""*/
 
 #ifndef GOFC_INCLUDE
 #if     (TURBOC | BCC | DJGPP | WATCOM)
@@ -1257,12 +1257,12 @@ static  int    rsp;			/* Runtime stack pointer	   */
 static  int    rspMax;			/* Maximum value of stack pointer  */
 static  int    pushes;			/* number of actual pushes in code */
 
-#define rPush  if (++rsp>=rspMax) rspMax=rsp
+#define rPush  if (++rsp>=rspMax) {rspMax=rsp;} push(mkOffset(rsp))
 
 static Void local rspRecalc() {		/* Recalculate rsp after change to */
     Int i = sp;				/* simulated stack pointer sp	   */
     for (rsp=(-1); i>=0; --i)
-	if (isNull(stack(i)) || stack(i)==mkOffset(i))
+	if (isOffset(stack(i)))
 	    rsp++;
     if (rsp>rspMax)			/* should never happen!		   */
 	rspMax = rsp;
@@ -1272,8 +1272,8 @@ static Void local rspRecalc() {		/* Recalculate rsp after change to */
  * Output code for a single supercombinator:
  * ------------------------------------------------------------------------*/
 
-#define ppushed(n)  (isNull(pushed(n)) ? POP : pushed(n))
-#define tpushed(n)  (isNull(pushed(n)) ? TOP : pushed(n))
+#define ppushed(n)  (isOffset(pushed(n)) ? POP : pushed(n))
+#define tpushed(n)  (isOffset(pushed(n)) ? TOP : pushed(n))
 
 static Void local outputCSc(fp,n)	/* Print C code for supercombinator*/
 FILE *fp;
@@ -1352,8 +1352,8 @@ Addr pc; {
 			   pc+=2;
 			   continue;
 
-	    case iLOAD	 : push(mkOffset(intAt(pc+1)));	 /* load from stack*/
-			   pc+=2;
+	    case iLOAD	 : push(ap(COPY,stack(intAt(pc+1))));
+			   pc+=2;			 /* load from stack*/
 			   continue;
 
 	    case iCELL	 : push(cellAt(pc+1));		 /* load const Cell*/
@@ -1370,7 +1370,6 @@ Addr pc; {
 
 	    case iINT	 : t = mkInt(intAt(pc+1));	 /* load int const */
 			   if (!isSmall(t)) {		 /* assume BIG int */
-			       push(NIL);
 			       rPush;
 			       pushes++;
 			       outC0(t);
@@ -1381,8 +1380,7 @@ Addr pc; {
 			   pc+=2;
 			   continue;
 
-	    case iFLOAT  : push(NIL);			 /* load float cnst*/
-			   rPush;
+	    case iFLOAT  : rPush;			 /* load float cnst*/
 			   pushes++;
 #if BREAK_FLOATS
 			   outC0(mkFloat(floatFromParts
@@ -1394,40 +1392,42 @@ Addr pc; {
 #endif
 			   continue;
 
-	    case iFLUSH  : if (nonNull(top())) {	 /* force top of   */
-			       outC1(C_FLUSH,top());	 /* simulated stack*/
-			       top() = NIL;		 /* onto real stack*/
-			       rPush;
+	    case iFLUSH  : if (!isOffset(top())) {	 /* force top of   */
+			       outC1(C_FLUSH,pop());	 /* simulated stack*/
+			       rPush;			 /* onto real stack*/
 			       pushes++;
 			   }
 			   pc++;
 			   continue;
 
-	    case iSTRING : push(NIL);			 /* load str const */
-			   rPush;
+	    case iSTRING : rPush;			 /* load str const */
 			   pushes++;
 			   outC0(mkStr(textAt(pc+1)));
 			   pc+=2;
 			   continue;
 
 	    case iMKAP   : for (i=intAt(pc+1); i>0; --i){/* make AP nodes  */
-			       if (isNull(pushed(0)))
-				   if (isNull(pushed(1))) {
+			       if (isOffset(pushed(0)))
+				   if (isOffset(pushed(1))) {
 				       outC0(C_MKAP);
+				       rsp-=2;
+				   }
+				   else {
+				       outC1(C_TOPARG,pushed(1));
 				       rsp--;
 				   }
-				   else
-				       outC1(C_TOPARG,pushed(1));
 			       else
-				   if (isNull(pushed(1)))
+				   if (isOffset(pushed(1))) {
 				       outC1(C_TOPFUN,pushed(0));
+				       rsp--;
+				   }
 				   else {
-				       rPush;
 				       pushes++;
 				       outC2(C_PUSHPAIR,pushed(0),pushed(1));
 				   }
 			       drop();
-			       top() = NIL;
+                               drop();
+			       rPush;
 			   }
 			   pc+=2;
 			   continue;
@@ -1435,9 +1435,7 @@ Addr pc; {
 	    case iUPDATE : t = stack(intAt(pc+1));	 /* update cell ...*/
 			   if (!isOffset(t))
 			       internal("iUPDATE");
-			   if (offsetOf(t)!=0)
-			       stack(intAt(pc+1)) = NIL;
-			   if (isNull(pushed(0)))	 /* update cell ...*/
+			   if (isOffset(pushed(0)))	 /* update cell ...*/
 			       rsp--;
 
 			   outC2(C_UPDATE,t,ppushed(0));
@@ -1449,11 +1447,8 @@ Addr pc; {
 	    case iUPDAP  : t = stack(intAt(pc+1));	 /* update AP node */
 			   if (!isOffset(t))
 			       internal("iUPDAP");
-			   if (offsetOf(t)!=0)
-			       stack(intAt(pc+1)) = NIL;
-
-			   if (isNull(pushed(0)))
-			       if (isNull(pushed(1))) {
+			   if (isOffset(pushed(0)))
+			       if (isOffset(pushed(1))) {
 				   outC1(C_UPDAP2,t);
 				   rsp-=2;
 			       }
@@ -1462,7 +1457,7 @@ Addr pc; {
 				   rsp--;
 			       }
 			   else
-			       if (isNull(pushed(1))) {
+			       if (isOffset(pushed(1))) {
 				   outC3(C_UPDAP,t,pushed(0),POP);
                                    rsp--;
 			       }
@@ -1475,16 +1470,15 @@ Addr pc; {
 			   continue;
 
 	    case iALLOC  : for (i=intAt(pc+1); i>0; --i){/* alloc loc vars */
+			       outC0(C_ALLOC);
 			       rPush;
 			       pushes++;
-			       outC0(C_ALLOC);
-			       push(mkOffset(rsp));
 			   }
 			   pc+=2;
 			   continue;
 
 	    case iSLIDE  : i = intAt(pc+1);		 /* remove loc vars*/
-			   if (nonNull(top()))
+			   if (!isOffset(top()))
 			       i--;
 			   outC2(C_SLIDE,mkInt(i),tpushed(0));
 			   rsp -= i;
@@ -1537,8 +1531,7 @@ Addr pc; {
 			   continue;
 
 #if NPLUSK
-	    case iINTGE	 : push(NIL);			 /* test integer >=*/
-			   rPush;
+	    case iINTGE	 : rPush;			 /* test integer >=*/
 			   pushes++;
 			   outC3(C_INTGE,mkInt(0),
 					 mkInt(intAt(pc+1)),
@@ -1546,8 +1539,7 @@ Addr pc; {
                            pc+=3;
 			   continue;
 
-	    case iINTDV	 : push(NIL);			 /* test for mult  */
-			   rPush;
+	    case iINTDV	 : rPush;			 /* test for mult  */
 			   pushes++;
 			   outC3(C_INTDV,mkInt(0),
 					 mkInt(intAt(pc+1)),
@@ -1579,12 +1571,11 @@ Addr pc; {
 
 			   while (i-- > 0) {
 			       rPush;
-			       push(mkOffset(rsp));
 			   }
 			   pc+=3;
 			   continue;
 
-	    case iEVAL	 : if (isNull(pushed(0)))	 /* evaluate top() */
+	    case iEVAL	 : if (isOffset(pushed(0)))	 /* evaluate top() */
 			       rsp--;
 			   outC1(C_EVAL,ppushed(0));
 			   drop();
@@ -1792,6 +1783,9 @@ Cell n; {
 			break;
 
 	case POP      : fprintf(fp,"pop()");
+			break;
+
+	case COPY     : expr(fp,snd(n));
 			break;
 
 	case OFFSET   : fprintf(fp,"offset(%d)",offsetOf(n));
